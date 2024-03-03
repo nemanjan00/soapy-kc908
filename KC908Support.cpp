@@ -1,5 +1,6 @@
 #include <SoapySDR/Device.hpp>
 #include <SoapySDR/Registry.hpp>
+#include <inttypes.h>
 #include"kcsdr.h"
 
 /***********************************************************************
@@ -11,15 +12,12 @@ class KC908 : public SoapySDR::Device
         sdr_api* sdr_handler;
         sdr_obj* sdr;
 
-        KC908(const SoapySDR::Kwargs &args) {
+        KC908(const SoapySDR::Kwargs &args)
+        {
             (void) args;
 
             sdr_handler = kcsdr_init();
             sdr = sdr_handler->find(KC_908_1);
-
-            for(int i = 0; i < DEVICE_PORT; i++) {
-                printf("\n\n%d\n\n", sdr->port[0].rx_freq.minimum);
-            }
         }
 
         size_t getNumChannels(const int dir) const
@@ -37,6 +35,29 @@ class KC908 : public SoapySDR::Device
             if(direction == SOAPY_SDR_RX) {
                 sdr_handler->rx_freq(sdr, frequency);
             }
+        }
+
+        SoapySDR::RangeList getFrequencyRange(
+                const int direction,
+                const size_t channel,
+                const std::string &name) const
+        {
+            SoapySDR::RangeList results;
+
+            if(direction == SOAPY_SDR_RX) {
+                results.push_back(SoapySDR::Range(sdr->port[0].rx_freq.minimum, sdr->port[0].rx_freq.maximum));
+            } else {
+                results.push_back(SoapySDR::Range(sdr->port[1].tx_freq.minimum, sdr->port[1].tx_freq.maximum));
+            }
+
+            return results;
+        }
+
+        std::vector<std::string> listFrequencies(const int direction, const size_t channel) const
+        {
+            std::vector<std::string> names;
+            names.push_back("RF");
+            return names;
         }
 };
 
@@ -68,9 +89,6 @@ SoapySDR::KwargsList findKC908(const SoapySDR::Kwargs &args)
  **********************************************************************/
 SoapySDR::Device *makeKC908(const SoapySDR::Kwargs &args)
 {
-    sdr_api* sdr_handler = kcsdr_init();
-    sdr_obj* sdr = sdr_handler->find(KC_908_1);
-
     return new KC908(args);
 }
 
