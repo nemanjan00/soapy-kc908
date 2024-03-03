@@ -69,7 +69,7 @@ class KC908 : public SoapySDR::Device
             return results;
         }
 
-        SoapySDR::Range getGainRange(const int direction, const size_t channel, const std::string &name) const;
+        SoapySDR::Range getGainRange(const int direction, const size_t channel, const std::string &name) const
         {
             if(direction == SOAPY_SDR_RX) {
                 return SoapySDR::Range(0, 31);
