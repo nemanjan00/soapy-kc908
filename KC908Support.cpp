@@ -59,6 +59,53 @@ class KC908 : public SoapySDR::Device
             names.push_back("RF");
             return names;
         }
+
+        bool getFullDuplex(const int direction, const size_t channel) const
+        {
+            return false;
+        }
+
+        // TODO: no idea about this
+        bool hasFrequencyCorrection(const int direction, const size_t channel) const
+        {
+            return false;
+        }
+
+        std::vector<std::string> listGains(const int direction, const size_t channel) const
+        {
+            std::vector<std::string> results;
+
+            results.push_back("RF");
+
+            return results;
+        }
+
+        bool hasGainMode(const int direction, const size_t channel)
+        {
+            return true;
+        }
+
+        SoapySDR::RangeList getGainRange(const int direction, const size_t channel)
+        {
+            SoapySDR::RangeList results;
+
+            if(direction == SOAPY_SDR_RX) {
+                results.push_back(SoapySDR::Range(0, 31));
+            } else {
+                results.push_back(SoapySDR::Range(0, 89));
+            }
+
+            return results;
+        }
+
+        SoapySDR::Range getGainRange(const int direction, const size_t channel, const std::string &name) const;
+        {
+            if(direction == SOAPY_SDR_RX) {
+                return SoapySDR::Range(0, 31);
+            } else {
+                return SoapySDR::Range(0, 89);
+            }
+        }
 };
 
 /***********************************************************************
