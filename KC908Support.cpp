@@ -20,44 +20,13 @@ class KC908 : public SoapySDR::Device
             sdr = sdr_handler->find(KC_908_1);
         }
 
+        /*******************************************************************
+        * Channels API
+        ******************************************************************/
+
         size_t getNumChannels(const int dir) const
         {
             return 1;
-        }
-
-        void setFrequency(
-                const int direction,
-                const size_t channel,
-                const std::string &name,
-                const double frequency,
-                const SoapySDR::Kwargs &args)
-        {
-            if(direction == SOAPY_SDR_RX) {
-                sdr_handler->rx_freq(sdr, frequency);
-            }
-        }
-
-        SoapySDR::RangeList getFrequencyRange(
-                const int direction,
-                const size_t channel,
-                const std::string &name) const
-        {
-            SoapySDR::RangeList results;
-
-            if(direction == SOAPY_SDR_RX) {
-                results.push_back(SoapySDR::Range(sdr->port[0].rx_freq.minimum, sdr->port[0].rx_freq.maximum));
-            } else {
-                results.push_back(SoapySDR::Range(sdr->port[1].tx_freq.minimum, sdr->port[1].tx_freq.maximum));
-            }
-
-            return results;
-        }
-
-        std::vector<std::string> listFrequencies(const int direction, const size_t channel) const
-        {
-            std::vector<std::string> names;
-            names.push_back("RF");
-            return names;
         }
 
         bool getFullDuplex(const int direction, const size_t channel) const
@@ -65,11 +34,13 @@ class KC908 : public SoapySDR::Device
             return false;
         }
 
-        // TODO: no idea about this
-        bool hasFrequencyCorrection(const int direction, const size_t channel) const
-        {
-            return false;
-        }
+        /*******************************************************************
+        * Stream API
+        ******************************************************************/
+
+        /*******************************************************************
+        * Gain API
+        ******************************************************************/
 
         std::vector<std::string> listGains(const int direction, const size_t channel) const
         {
@@ -106,6 +77,63 @@ class KC908 : public SoapySDR::Device
                 return SoapySDR::Range(0, 89);
             }
         }
+
+        /*******************************************************************
+        * Frontend corrections API
+        ******************************************************************/
+
+        /*******************************************************************
+        * Frequency API
+        ******************************************************************/
+
+        void setFrequency(
+                const int direction,
+                const size_t channel,
+                const std::string &name,
+                const double frequency,
+                const SoapySDR::Kwargs &args)
+        {
+            if(direction == SOAPY_SDR_RX) {
+                sdr_handler->rx_freq(sdr, frequency);
+            }
+        }
+
+        SoapySDR::RangeList getFrequencyRange(
+                const int direction,
+                const size_t channel,
+                const std::string &name) const
+        {
+            SoapySDR::RangeList results;
+
+            if(direction == SOAPY_SDR_RX) {
+                results.push_back(SoapySDR::Range(sdr->port[0].rx_freq.minimum, sdr->port[0].rx_freq.maximum));
+            } else {
+                results.push_back(SoapySDR::Range(sdr->port[1].tx_freq.minimum, sdr->port[1].tx_freq.maximum));
+            }
+
+            return results;
+        }
+
+        std::vector<std::string> listFrequencies(const int direction, const size_t channel) const
+        {
+            std::vector<std::string> names;
+            names.push_back("RF");
+            return names;
+        }
+
+        // TODO: no idea about this
+        bool hasFrequencyCorrection(const int direction, const size_t channel) const
+        {
+            return false;
+        }
+
+        /*******************************************************************
+        * Sample Rate API
+        ******************************************************************/
+
+        /*******************************************************************
+        * Bandwidth API
+        ******************************************************************/
 };
 
 /***********************************************************************
