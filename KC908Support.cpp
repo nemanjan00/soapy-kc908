@@ -1,5 +1,6 @@
 #include <SoapySDR/Device.hpp>
 #include <SoapySDR/Registry.hpp>
+#include <SoapySDR/Formats.hpp>
 #include <inttypes.h>
 #include"kcsdr.h"
 
@@ -38,6 +39,19 @@ class KC908 : public SoapySDR::Device
         * Stream API
         ******************************************************************/
 
+        std::vector<std::string> getStreamFormats(const int direction, const size_t channel) const {
+            std::vector<std::string> formats;
+
+            formats.push_back(SOAPY_SDR_CU16);
+
+            return formats;
+        }
+
+        std::string getNativeStreamFormat(const int direction, const size_t channel, double &fullScale) const
+        {
+            return SOAPY_SDR_CU16;
+        }
+
         /*******************************************************************
         * Gain API
         ******************************************************************/
@@ -46,6 +60,8 @@ class KC908 : public SoapySDR::Device
         {
             std::vector<std::string> results;
 
+            // TODO: Add Attenuator Gain
+            // TODO: Add Amplifier Gain
             results.push_back("IF");
 
             return results;
@@ -79,10 +95,6 @@ class KC908 : public SoapySDR::Device
         }
 
         /*******************************************************************
-        * Frontend corrections API
-        ******************************************************************/
-
-        /*******************************************************************
         * Frequency API
         ******************************************************************/
 
@@ -95,6 +107,8 @@ class KC908 : public SoapySDR::Device
         {
             if(direction == SOAPY_SDR_RX) {
                 sdr_handler->rx_freq(sdr, frequency);
+            } else {
+                sdr_handler->tx_freq(sdr, frequency);
             }
         }
 
@@ -130,6 +144,20 @@ class KC908 : public SoapySDR::Device
         /*******************************************************************
         * Sample Rate API
         ******************************************************************/
+
+        SoapySDR::RangeList getSampleRateRange(const int direction, const size_t channel) const
+        {
+
+            SoapySDR::RangeList results;
+
+            if(direction == SOAPY_SDR_RX) {
+                results.push_back(SoapySDR::Range(sdr->port[0].samp_rate.minimum, sdr->port[0].samp_rate.maximum));
+            } else {
+                results.push_back(SoapySDR::Range(sdr->port[1].samp_rate.minimum, sdr->port[1].samp_rate.maximum));
+            }
+
+            return results;
+        }
 
         /*******************************************************************
         * Bandwidth API
