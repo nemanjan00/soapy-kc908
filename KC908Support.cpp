@@ -172,6 +172,9 @@ class KC908 : public SoapySDR::Device
         /*******************************************************************
         * Bandwidth API
         ******************************************************************/
+    private:
+        SoapySDR::Stream* const TX_STREAM = (SoapySDR::Stream*) 0x1;
+        SoapySDR::Stream* const RX_STREAM = (SoapySDR::Stream*) 0x2;
 };
 
 /***********************************************************************
