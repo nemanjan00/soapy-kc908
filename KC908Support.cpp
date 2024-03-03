@@ -46,7 +46,7 @@ class KC908 : public SoapySDR::Device
         {
             std::vector<std::string> results;
 
-            results.push_back("RF");
+            results.push_back("IF");
 
             return results;
         }
