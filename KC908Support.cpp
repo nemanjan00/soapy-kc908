@@ -159,6 +159,16 @@ class KC908 : public SoapySDR::Device
             return results;
         }
 
+        void setSampleRate(const int direction, const size_t channel, const double rate)
+        {
+            // Figure out the types
+            if(direction == SOAPY_SDR_RX) {
+                sdr_handler->rx_samp_rate(sdr, rate);
+            } else {
+                sdr_handler->tx_samp_rate(sdr, rate);
+            }
+        }
+
         /*******************************************************************
         * Bandwidth API
         ******************************************************************/
