@@ -52,6 +52,76 @@ class KC908 : public SoapySDR::Device
             return SOAPY_SDR_CU16;
         }
 
+        SoapySDR::Stream *setupStream(
+            const int direction,
+            const std::string &format,
+            const std::vector<size_t> &channels = std::vector<size_t>(),
+            const SoapySDR::Kwargs &args = SoapySDR::Kwargs())
+        {
+            if(direction == SOAPY_SDR_RX) {
+                return RX_STREAM;
+            } else {
+                return TX_STREAM;
+            }
+        }
+
+        void closeStream(SoapySDR::Stream *stream)
+        {
+            this->deactivateStream(stream, 0, 0);
+        }
+
+        // TODO: support flags
+
+        virtual int activateStream(
+            SoapySDR::Stream *stream,
+            const int flags = 0,
+            const long long timeNs = 0,
+            const size_t numElems = 0)
+        {
+            if(stream == RX_STREAM){
+                sdr_handler->rx_start(sdr);
+            } else {
+                sdr_handler->tx_start(sdr);
+            }
+
+            return 0;
+        }
+
+        virtual int deactivateStream(
+            SoapySDR::Stream *stream,
+            const int flags = 0,
+            const long long timeNs = 0)
+        {
+            if(stream == RX_STREAM){
+                sdr_handler->rx_stop(sdr);
+            } else {
+                sdr_handler->tx_stop(sdr);
+            }
+
+            return 0;
+        }
+
+        virtual int readStream(
+            SoapySDR::Stream *stream,
+            void * const *buffs,
+            const size_t numElems,
+            int &flags,
+            long long &timeNs,
+            const long timeoutUs = 100000)
+        {
+            if(stream != RX_STREAM){
+                return SOAPY_SDR_NOT_SUPPORTED;
+            }
+
+            bool ret = false;
+
+            do {
+                ret = sdr_handler->read(sdr, (uint8_t *)buffs[0], numElems * 2 * sizeof(uint16_t));
+            } while(ret == false);
+
+            return numElems;
+        }
+
         /*******************************************************************
         * Gain API
         ******************************************************************/
