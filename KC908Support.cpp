@@ -1,6 +1,8 @@
 #include <SoapySDR/Device.hpp>
 #include <SoapySDR/Registry.hpp>
 #include <SoapySDR/Formats.hpp>
+#include <SoapySDR/Logger.h>
+#include <SoapySDR/Types.h>
 #include <inttypes.h>
 #include"kcsdr.h"
 
@@ -79,6 +81,7 @@ class KC908 : public SoapySDR::Device
             const size_t numElems = 0)
         {
             if(stream == RX_STREAM){
+                SoapySDR_logf(SOAPY_SDR_WARNING, "Activating RX");
                 sdr_handler->rx_start(sdr);
             } else {
                 sdr_handler->tx_start(sdr);
@@ -113,11 +116,15 @@ class KC908 : public SoapySDR::Device
                 return SOAPY_SDR_NOT_SUPPORTED;
             }
 
+            SoapySDR_logf(SOAPY_SDR_WARNING, "Reading");
+
             bool ret = false;
 
             do {
                 ret = sdr_handler->read(sdr, (uint8_t *)buffs[0], numElems * 2 * sizeof(uint16_t));
             } while(ret == false);
+
+            SoapySDR_logf(SOAPY_SDR_WARNING, "Got buffer");
 
             return numElems;
         }
@@ -215,6 +222,24 @@ class KC908 : public SoapySDR::Device
         * Sample Rate API
         ******************************************************************/
 
+        std::vector<double> listSampleRates(const int direction, const size_t channel) const
+        {
+            std::vector<double> results;
+
+            results.push_back(250000);
+            results.push_back(1024000);
+            results.push_back(1536000);
+            results.push_back(1792000);
+            results.push_back(1920000);
+            results.push_back(2048000);
+            results.push_back(2160000);
+            results.push_back(2560000);
+            results.push_back(2880000);
+            results.push_back(3200000);
+
+            return results;
+        }
+
         SoapySDR::RangeList getSampleRateRange(const int direction, const size_t channel) const
         {
 
@@ -233,7 +258,9 @@ class KC908 : public SoapySDR::Device
         {
             // Figure out the types
             if(direction == SOAPY_SDR_RX) {
-                sdr_handler->rx_samp_rate(sdr, rate);
+                SoapySDR_logf(SOAPY_SDR_WARNING, "Setting sample rate");
+                sdr_handler->rx_samp_rate(sdr, 10);
+                SoapySDR_logf(SOAPY_SDR_WARNING, "Set sample rate");
             } else {
                 sdr_handler->tx_samp_rate(sdr, rate);
             }
