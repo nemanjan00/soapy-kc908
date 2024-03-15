@@ -259,7 +259,7 @@ class KC908 : public SoapySDR::Device
             // Figure out the types
             if(direction == SOAPY_SDR_RX) {
                 SoapySDR_logf(SOAPY_SDR_WARNING, "Setting sample rate");
-                sdr_handler->rx_samp_rate(sdr, 10);
+                sdr_handler->rx_samp_rate(sdr, rate);
                 SoapySDR_logf(SOAPY_SDR_WARNING, "Set sample rate");
             } else {
                 sdr_handler->tx_samp_rate(sdr, rate);
