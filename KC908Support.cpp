@@ -136,7 +136,7 @@ class KC908 : public SoapySDR::Device
                 ret = sdr_handler->read(sdr, (uint8_t *)d_buf, numElems * 2 * sizeof(uint16_t));
             } while(ret == false);
 
-            u16_to_f32(d_buf, (float*)buffs[0], numElems);
+            u16_to_f32(d_buf, (float*)buffs[0], numElems * 2);
 
             return numElems;
         }
