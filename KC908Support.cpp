@@ -5,6 +5,7 @@
 #include <SoapySDR/Types.h>
 #include <inttypes.h>
 #include"kcsdr.h"
+#include <fstream>
 
 /***********************************************************************
  * Device interface
@@ -14,6 +15,9 @@ class KC908 : public SoapySDR::Device
     public:
         sdr_api* sdr_handler;
         sdr_obj* sdr;
+        std::ofstream out_file;
+
+        uint16_t* d_buf = new uint16_t[2 * 409600];
 
         KC908(const SoapySDR::Kwargs &args)
         {
@@ -44,14 +48,14 @@ class KC908 : public SoapySDR::Device
         std::vector<std::string> getStreamFormats(const int direction, const size_t channel) const {
             std::vector<std::string> formats;
 
-            formats.push_back(SOAPY_SDR_CU16);
+            formats.push_back(SOAPY_SDR_CF32);
 
             return formats;
         }
 
         std::string getNativeStreamFormat(const int direction, const size_t channel, double &fullScale) const
         {
-            return SOAPY_SDR_CU16;
+            return SOAPY_SDR_CF32;
         }
 
         SoapySDR::Stream *setupStream(
@@ -60,6 +64,8 @@ class KC908 : public SoapySDR::Device
             const std::vector<size_t> &channels = std::vector<size_t>(),
             const SoapySDR::Kwargs &args = SoapySDR::Kwargs())
         {
+            SoapySDR_logf(SOAPY_SDR_WARNING, "%s", format.c_str());
+
             if(direction == SOAPY_SDR_RX) {
                 return RX_STREAM;
             } else {
@@ -80,6 +86,8 @@ class KC908 : public SoapySDR::Device
             const long long timeNs = 0,
             const size_t numElems = 0)
         {
+            out_file.open("dump.fc32", std::ios::out | std::ios::binary);
+
             if(stream == RX_STREAM){
                 SoapySDR_logf(SOAPY_SDR_WARNING, "Activating RX");
                 sdr_handler->rx_start(sdr);
@@ -104,6 +112,12 @@ class KC908 : public SoapySDR::Device
             return 0;
         }
 
+        void u16_to_f32(const uint16_t* in, float* out, int count) {
+            for (int i = 0; i < count; i++) {
+                *out++ = (float)(*in++) * (1.0f / 32768.0f) - 0.5f;
+            }
+        }
+
         virtual int readStream(
             SoapySDR::Stream *stream,
             void * const *buffs,
@@ -116,15 +130,13 @@ class KC908 : public SoapySDR::Device
                 return SOAPY_SDR_NOT_SUPPORTED;
             }
 
-            SoapySDR_logf(SOAPY_SDR_WARNING, "Reading");
-
             bool ret = false;
 
             do {
-                ret = sdr_handler->read(sdr, (uint8_t *)buffs[0], numElems * 2 * sizeof(uint16_t));
+                ret = sdr_handler->read(sdr, (uint8_t *)d_buf, numElems * 2 * sizeof(uint16_t));
             } while(ret == false);
 
-            SoapySDR_logf(SOAPY_SDR_WARNING, "Got buffer");
+            u16_to_f32(d_buf, (float*)buffs[0], numElems);
 
             return numElems;
         }
