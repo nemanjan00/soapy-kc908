@@ -17,6 +17,8 @@ class KC908 : public SoapySDR::Device
         sdr_obj* sdr;
         std::ofstream out_file;
 
+        bool running = false;
+
         uint16_t* d_buf = new uint16_t[2 * 409600];
 
         KC908(const SoapySDR::Kwargs &args)
@@ -86,7 +88,7 @@ class KC908 : public SoapySDR::Device
             const long long timeNs = 0,
             const size_t numElems = 0)
         {
-            out_file.open("dump.fc32", std::ios::out | std::ios::binary);
+            running = true;
 
             if(stream == RX_STREAM){
                 SoapySDR_logf(SOAPY_SDR_WARNING, "Activating RX");
@@ -103,11 +105,15 @@ class KC908 : public SoapySDR::Device
             const int flags = 0,
             const long long timeNs = 0)
         {
+            running = false;
+
             if(stream == RX_STREAM){
                 sdr_handler->rx_stop(sdr);
             } else {
                 sdr_handler->tx_stop(sdr);
             }
+
+            SoapySDR_logf(SOAPY_SDR_WARNING, "Stopped");
 
             return 0;
         }
@@ -133,6 +139,10 @@ class KC908 : public SoapySDR::Device
             bool ret = false;
 
             do {
+                if(!running) {
+                    return 0;
+                }
+
                 ret = sdr_handler->read(sdr, (uint8_t *)d_buf, numElems * 2 * sizeof(uint16_t));
             } while(ret == false);
 
