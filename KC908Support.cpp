@@ -195,8 +195,6 @@ class KC908 : public SoapySDR::Device
 
             i16_to_f32(d_buf, (float*)buffs[0], numElems * 2);
 
-            out_file.write((char*)buffs[0], numElems * sizeof(float));
-
             return numElems;
         }
 
