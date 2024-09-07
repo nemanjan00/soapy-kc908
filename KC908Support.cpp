@@ -92,6 +92,9 @@ class KC908 : public SoapySDR::Device
 
             if(stream == RX_STREAM){
                 SoapySDR_logf(SOAPY_SDR_WARNING, "Activating RX");
+                sdr_handler->rx_ext_amp(sdr, 0);
+                sdr_handler->rx_amp(sdr, 20);
+                sdr_handler->rx_att(sdr, 0);
                 sdr_handler->rx_start(sdr);
             } else {
                 sdr_handler->tx_start(sdr);
@@ -109,8 +112,10 @@ class KC908 : public SoapySDR::Device
 
             if(stream == RX_STREAM){
                 sdr_handler->rx_stop(sdr);
+                sdr_handler->close(sdr);
             } else {
                 sdr_handler->tx_stop(sdr);
+                sdr_handler->close(sdr);
             }
 
             SoapySDR_logf(SOAPY_SDR_WARNING, "Stopped");
@@ -120,8 +125,13 @@ class KC908 : public SoapySDR::Device
 
         void u16_to_f32(const uint16_t* in, float* out, int count) {
             for (int i = 0; i < count; i++) {
-                *out++ = (float)(*in++) * (1.0f / 32768.0f) - 0.5f;
+                // TODO: Samples are using all of the resolution. Figure out how to properly scalee it, 32f is temporary solution
+                float new_out = (float)(*in++) * (1.0f / 32768.0f / 32.f) - 1.f;
+
+                *out++ = new_out;
             }
+
+            SoapySDR_logf(SOAPY_SDR_WARNING, "%f %f", min, max);
         }
 
         virtual int readStream(
@@ -168,30 +178,30 @@ class KC908 : public SoapySDR::Device
 
         bool hasGainMode(const int direction, const size_t channel)
         {
-            return true;
+            return false;
         }
 
-        SoapySDR::RangeList getGainRange(const int direction, const size_t channel)
-        {
-            SoapySDR::RangeList results;
+        //SoapySDR::RangeList getGainRange(const int direction, const size_t channel)
+        //{
+            //SoapySDR::RangeList results;
 
-            if(direction == SOAPY_SDR_RX) {
-                results.push_back(SoapySDR::Range(0, 31));
-            } else {
-                results.push_back(SoapySDR::Range(0, 89));
-            }
+            //if(direction == SOAPY_SDR_RX) {
+                //results.push_back(SoapySDR::Range(0, 31));
+            //} else {
+                //results.push_back(SoapySDR::Range(0, 89));
+            //}
 
-            return results;
-        }
+            //return results;
+        //}
 
-        SoapySDR::Range getGainRange(const int direction, const size_t channel, const std::string &name) const
-        {
-            if(direction == SOAPY_SDR_RX) {
-                return SoapySDR::Range(0, 31);
-            } else {
-                return SoapySDR::Range(0, 89);
-            }
-        }
+        //SoapySDR::Range getGainRange(const int direction, const size_t channel, const std::string &name) const
+        //{
+            //if(direction == SOAPY_SDR_RX) {
+                //return SoapySDR::Range(0, 31);
+            //} else {
+                //return SoapySDR::Range(0, 89);
+            //}
+        //}
 
         /*******************************************************************
         * Frequency API
