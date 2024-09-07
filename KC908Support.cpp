@@ -209,6 +209,8 @@ class KC908 : public SoapySDR::Device
             // TODO: Add Attenuator Gain
             // TODO: Add Amplifier Gain
             results.push_back("IF");
+            results.push_back("AMP");
+            results.push_back("ATT");
 
             return results;
         }
