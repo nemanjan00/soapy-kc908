@@ -17,8 +17,8 @@ set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "")
 # Header and library resources needed to communicate with the device.
 # These may be found within the build tree or in an external project.
 ########################################################################
-set(MY_DEVICE_INCLUDE_DIRS "./lib")
-set(MY_DEVICE_LIBRARIES "libkcsdr.so")
+set(KCSDR_INCLUDE_DIRS "/usr/local/include/kcsdr/")
+set(KCSDR_LIBRARIES "/usr/local/lib/libkcsdr.so")
 
 ########################################################################
 # build the module
@@ -30,9 +30,9 @@ if (NOT SoapySDR_FOUND)
     return()
 endif ()
 
-include_directories(${MY_DEVICE_INCLUDE_DIRS})
+include_directories(${KCSDR_INCLUDE_DIRS})
 SOAPY_SDR_MODULE_UTIL(
     TARGET KC908
     SOURCES KC908Support.cpp
-    LIBRARIES ${MY_DEVICE_LIBRARIES}
+    LIBRARIES ${KCSDR_LIBRARIES}
 )
