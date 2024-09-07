@@ -15,7 +15,6 @@ class KC908 : public SoapySDR::Device
     public:
         sdr_api* sdr_handler;
         sdr_obj* sdr;
-        std::ofstream out_file;
 
         bool running = false;
         double rx_bw = 40000000;
@@ -36,13 +35,11 @@ class KC908 : public SoapySDR::Device
         double tx_freq_max;
         double tx_freq_min;
 
-        uint16_t* d_buf = new uint16_t[2 * 409600];
+        int16_t* d_buf = new int16_t[2 * 409600];
 
         KC908(const SoapySDR::Kwargs &args)
         {
             (void) args;
-
-            SoapySDR_logf(SOAPY_SDR_WARNING, "Constructor");
 
             sdr_handler = kcsdr_init();
 
@@ -69,13 +66,11 @@ class KC908 : public SoapySDR::Device
 
         size_t getNumChannels(const int dir) const
         {
-            SoapySDR_logf(SOAPY_SDR_WARNING, "Get num channels");
             return 1;
         }
 
         bool getFullDuplex(const int direction, const size_t channel) const
         {
-            SoapySDR_logf(SOAPY_SDR_WARNING, "Get full duplex");
             return true;
         }
 
@@ -84,7 +79,6 @@ class KC908 : public SoapySDR::Device
         ******************************************************************/
 
         std::vector<std::string> getStreamFormats(const int direction, const size_t channel) const {
-            SoapySDR_logf(SOAPY_SDR_WARNING, "Get stream formats");
             std::vector<std::string> formats;
 
             formats.push_back(SOAPY_SDR_CF32);
@@ -94,7 +88,6 @@ class KC908 : public SoapySDR::Device
 
         std::string getNativeStreamFormat(const int direction, const size_t channel, double &fullScale) const
         {
-            SoapySDR_logf(SOAPY_SDR_WARNING, "Get native format");
             return SOAPY_SDR_CF32;
         }
 
@@ -104,9 +97,6 @@ class KC908 : public SoapySDR::Device
             const std::vector<size_t> &channels = std::vector<size_t>(),
             const SoapySDR::Kwargs &args = SoapySDR::Kwargs())
         {
-            SoapySDR_logf(SOAPY_SDR_WARNING, "setup stream");
-            SoapySDR_logf(SOAPY_SDR_WARNING, "%s", format.c_str());
-
             if(direction == SOAPY_SDR_RX) {
                 return RX_STREAM;
             } else {
@@ -116,7 +106,6 @@ class KC908 : public SoapySDR::Device
 
         void closeStream(SoapySDR::Stream *stream)
         {
-            SoapySDR_logf(SOAPY_SDR_WARNING, "Close stream");
             this->deactivateStream(stream, 0, 0);
         }
 
@@ -128,10 +117,7 @@ class KC908 : public SoapySDR::Device
             const long long timeNs = 0,
             const size_t numElems = 0)
         {
-            SoapySDR_logf(SOAPY_SDR_WARNING, "Activate stream");
             if(stream == RX_STREAM){
-                SoapySDR_logf(SOAPY_SDR_WARNING, "Activating RX");
-
                 sdr = sdr_handler->find(KC_908_1);
 
                 sdr_handler->rx_bw(sdr, rx_bw);
@@ -159,7 +145,6 @@ class KC908 : public SoapySDR::Device
             const int flags = 0,
             const long long timeNs = 0)
         {
-            SoapySDR_logf(SOAPY_SDR_WARNING, "Deactivate stream");
             if(running == false) {
                 return 0;
             }
@@ -174,15 +159,13 @@ class KC908 : public SoapySDR::Device
                 sdr_handler->close(sdr);
             }
 
-            SoapySDR_logf(SOAPY_SDR_WARNING, "Stopped");
-
             return 0;
         }
 
-        void u16_to_f32(const uint16_t* in, float* out, int count) {
+        void i16_to_f32(const int16_t* in, float* out, int count) {
+            // TODO: confirm this logic
             for (int i = 0; i < count; i++) {
-                // TODO: Samples are using all of the resolution. Figure out how to properly scalee it, 32f is temporary solution
-                float new_out = (float)(*in++) * (1.0f / 32768.0f / 32.f) - 1.f;
+                float new_out = (float)(*in++) * (1.0f / 32768.0f) - 1.f;
 
                 *out++ = new_out;
             }
@@ -196,7 +179,6 @@ class KC908 : public SoapySDR::Device
             long long &timeNs,
             const long timeoutUs = 100000)
         {
-            SoapySDR_logf(SOAPY_SDR_WARNING, "Read stream");
             if(stream != RX_STREAM){
                 return SOAPY_SDR_NOT_SUPPORTED;
             }
@@ -211,7 +193,9 @@ class KC908 : public SoapySDR::Device
                 ret = sdr_handler->read(sdr, (uint8_t *)d_buf, numElems * 2 * sizeof(uint16_t));
             } while(ret == false);
 
-            u16_to_f32(d_buf, (float*)buffs[0], numElems * 2);
+            i16_to_f32(d_buf, (float*)buffs[0], numElems * 2);
+
+            out_file.write((char*)buffs[0], numElems * sizeof(float));
 
             return numElems;
         }
@@ -222,7 +206,6 @@ class KC908 : public SoapySDR::Device
 
         std::vector<std::string> listGains(const int direction, const size_t channel) const
         {
-            SoapySDR_logf(SOAPY_SDR_WARNING, "List gains");
             std::vector<std::string> results;
 
             // TODO: Add Attenuator Gain
@@ -234,7 +217,6 @@ class KC908 : public SoapySDR::Device
 
         bool hasGainMode(const int direction, const size_t channel)
         {
-            SoapySDR_logf(SOAPY_SDR_WARNING, "Has gain mode");
             return false;
         }
 
@@ -271,8 +253,6 @@ class KC908 : public SoapySDR::Device
                 const double frequency,
                 const SoapySDR::Kwargs &args)
         {
-            SoapySDR_logf(SOAPY_SDR_WARNING, "Set frequency");
-
             if(direction == SOAPY_SDR_RX) {
                 rx_freq = frequency;
             } else {
@@ -295,8 +275,6 @@ class KC908 : public SoapySDR::Device
                 const size_t channel,
                 const std::string &name) const
         {
-            SoapySDR_logf(SOAPY_SDR_WARNING, "Range list");
-
             SoapySDR::RangeList results;
 
             if(direction == SOAPY_SDR_RX) {
@@ -310,8 +288,6 @@ class KC908 : public SoapySDR::Device
 
         std::vector<std::string> listFrequencies(const int direction, const size_t channel) const
         {
-            SoapySDR_logf(SOAPY_SDR_WARNING, "List frequencies");
-
             std::vector<std::string> names;
             names.push_back("RF");
             return names;
@@ -320,8 +296,6 @@ class KC908 : public SoapySDR::Device
         // TODO: no idea about this
         bool hasFrequencyCorrection(const int direction, const size_t channel) const
         {
-            SoapySDR_logf(SOAPY_SDR_WARNING, "Has frequency correction");
-
             return false;
         }
 
@@ -331,8 +305,6 @@ class KC908 : public SoapySDR::Device
 
         std::vector<double> listSampleRates(const int direction, const size_t channel) const
         {
-            SoapySDR_logf(SOAPY_SDR_WARNING, "List sample rates");
-
             std::vector<double> results;
 
             results.push_back(250000);
@@ -351,8 +323,6 @@ class KC908 : public SoapySDR::Device
 
         SoapySDR::RangeList getSampleRateRange(const int direction, const size_t channel) const
         {
-            SoapySDR_logf(SOAPY_SDR_WARNING, "Get sample rate range");
-
             SoapySDR::RangeList results;
 
             if(direction == SOAPY_SDR_RX) {
@@ -366,8 +336,6 @@ class KC908 : public SoapySDR::Device
 
         void setSampleRate(const int direction, const size_t channel, const double rate)
         {
-            SoapySDR_logf(SOAPY_SDR_WARNING, "Set sample rate");
-
             if(direction == SOAPY_SDR_RX) {
                 rx_bw = rate;
             } else {
@@ -380,11 +348,9 @@ class KC908 : public SoapySDR::Device
 
             // Figure out the types
             if(direction == SOAPY_SDR_RX) {
-                SoapySDR_logf(SOAPY_SDR_WARNING, "Setting sample rate");
                 sdr_handler->rx_bw(sdr, rate);
-                SoapySDR_logf(SOAPY_SDR_WARNING, "Set sample rate");
             } else {
-                sdr_handler->tx_samp_rate(sdr, rate);
+                sdr_handler->tx_bw(sdr, rate);
             }
         }
 
