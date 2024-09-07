@@ -18,6 +18,23 @@ class KC908 : public SoapySDR::Device
         std::ofstream out_file;
 
         bool running = false;
+        double rx_bw = 40000000;
+        double tx_bw = 40000000;
+
+        double rx_freq = 100000000;
+        double tx_freq = 100000000;
+
+        double rx_bw_max;
+        double rx_bw_min;
+
+        double tx_bw_max;
+        double tx_bw_min;
+
+        double rx_freq_max;
+        double rx_freq_min;
+
+        double tx_freq_max;
+        double tx_freq_min;
 
         uint16_t* d_buf = new uint16_t[2 * 409600];
 
@@ -26,7 +43,22 @@ class KC908 : public SoapySDR::Device
             (void) args;
 
             sdr_handler = kcsdr_init();
+
             sdr = sdr_handler->find(KC_908_1);
+
+            rx_freq_min = sdr->port[0].rx_freq.minimum;
+            rx_freq_max = sdr->port[0].rx_freq.maximum;
+
+            tx_freq_min = sdr->port[1].tx_freq.minimum;
+            tx_freq_max = sdr->port[1].tx_freq.maximum;
+
+            rx_bw_min = sdr->port[0].samp_rate.minimum;
+            rx_bw_max = sdr->port[0].samp_rate.maximum;
+
+            tx_bw_min = sdr->port[1].samp_rate.minimum;
+            tx_bw_max = sdr->port[1].samp_rate.maximum;
+
+            sdr_handler->close(sdr);
         }
 
         /*******************************************************************
@@ -92,11 +124,21 @@ class KC908 : public SoapySDR::Device
 
             if(stream == RX_STREAM){
                 SoapySDR_logf(SOAPY_SDR_WARNING, "Activating RX");
+
+                sdr = sdr_handler->find(KC_908_1);
+
+                sdr_handler->rx_bw(sdr, rx_bw);
+                sdr_handler->rx_freq(sdr, rx_freq);
+
                 sdr_handler->rx_ext_amp(sdr, 0);
                 sdr_handler->rx_amp(sdr, 20);
                 sdr_handler->rx_att(sdr, 0);
                 sdr_handler->rx_start(sdr);
             } else {
+                sdr = sdr_handler->find(KC_908_1);
+
+                sdr_handler->tx_bw(sdr, tx_bw);
+
                 sdr_handler->tx_start(sdr);
             }
 
@@ -130,8 +172,6 @@ class KC908 : public SoapySDR::Device
 
                 *out++ = new_out;
             }
-
-            SoapySDR_logf(SOAPY_SDR_WARNING, "%f %f", min, max);
         }
 
         virtual int readStream(
@@ -215,6 +255,16 @@ class KC908 : public SoapySDR::Device
                 const SoapySDR::Kwargs &args)
         {
             if(direction == SOAPY_SDR_RX) {
+                rx_freq = frequency;
+            } else {
+                tx_freq = frequency;
+            }
+
+            if(!running) {
+                return;
+            }
+
+            if(direction == SOAPY_SDR_RX) {
                 sdr_handler->rx_freq(sdr, frequency);
             } else {
                 sdr_handler->tx_freq(sdr, frequency);
@@ -229,9 +279,9 @@ class KC908 : public SoapySDR::Device
             SoapySDR::RangeList results;
 
             if(direction == SOAPY_SDR_RX) {
-                results.push_back(SoapySDR::Range(sdr->port[0].rx_freq.minimum, sdr->port[0].rx_freq.maximum));
+                results.push_back(SoapySDR::Range(rx_freq_min, rx_freq_max));
             } else {
-                results.push_back(SoapySDR::Range(sdr->port[1].tx_freq.minimum, sdr->port[1].tx_freq.maximum));
+                results.push_back(SoapySDR::Range(tx_freq_min, tx_freq_max));
             }
 
             return results;
@@ -278,9 +328,9 @@ class KC908 : public SoapySDR::Device
             SoapySDR::RangeList results;
 
             if(direction == SOAPY_SDR_RX) {
-                results.push_back(SoapySDR::Range(sdr->port[0].samp_rate.minimum, sdr->port[0].samp_rate.maximum));
+                results.push_back(SoapySDR::Range(rx_bw_min, rx_bw_max));
             } else {
-                results.push_back(SoapySDR::Range(sdr->port[1].samp_rate.minimum, sdr->port[1].samp_rate.maximum));
+                results.push_back(SoapySDR::Range(tx_bw_min, tx_bw_max));
             }
 
             return results;
@@ -288,6 +338,16 @@ class KC908 : public SoapySDR::Device
 
         void setSampleRate(const int direction, const size_t channel, const double rate)
         {
+            if(direction == SOAPY_SDR_RX) {
+                rx_bw = rate;
+            } else {
+                tx_bw = rate;
+            }
+
+            if(!running) {
+                return;
+            }
+
             // Figure out the types
             if(direction == SOAPY_SDR_RX) {
                 SoapySDR_logf(SOAPY_SDR_WARNING, "Setting sample rate");
