@@ -120,8 +120,6 @@ class KC908 : public SoapySDR::Device
             const long long timeNs = 0,
             const size_t numElems = 0)
         {
-            running = true;
-
             if(stream == RX_STREAM){
                 SoapySDR_logf(SOAPY_SDR_WARNING, "Activating RX");
 
@@ -141,6 +139,8 @@ class KC908 : public SoapySDR::Device
 
                 sdr_handler->tx_start(sdr);
             }
+
+            running = true;
 
             return 0;
         }
