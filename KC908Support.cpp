@@ -35,6 +35,21 @@ class KC908 : public SoapySDR::Device
         double tx_freq_max;
         double tx_freq_min;
 
+        int rx_amp = 0;
+        int rx_amp_min;
+        int rx_amp_max;
+        int rx_amp_step;
+
+        int rx_att = 0;
+        int rx_att_min;
+        int rx_att_max;
+        int rx_att_step;
+
+        int rx_ifgain = 0;
+        int rx_ifgain_min;
+        int rx_ifgain_max;
+        int rx_ifgain_step;
+
         int16_t* d_buf = new int16_t[2 * 409600];
 
         KC908(const SoapySDR::Kwargs &args)
@@ -56,6 +71,18 @@ class KC908 : public SoapySDR::Device
 
             tx_bw_min = sdr->port[1].samp_rate.minimum;
             tx_bw_max = sdr->port[1].samp_rate.maximum;
+
+            rx_amp_min = sdr->port[1].amp.minimum;
+            rx_amp_max = sdr->port[1].amp.maximum;
+            rx_amp_step = sdr->port[1].amp.step;
+
+            rx_att_min = sdr->port[1].att.minimum;
+            rx_att_max = sdr->port[1].att.maximum * 1;
+            rx_att_step = sdr->port[1].att.step;
+
+            rx_ifgain_min = sdr->port[1].ifgain.minimum;
+            rx_ifgain_max = sdr->port[1].ifgain.maximum;
+            rx_ifgain_step = sdr->port[1].ifgain.step;
 
             sdr_handler->close(sdr);
         }
@@ -123,9 +150,10 @@ class KC908 : public SoapySDR::Device
                 sdr_handler->rx_bw(sdr, rx_bw);
                 sdr_handler->rx_freq(sdr, rx_freq);
 
-                sdr_handler->rx_ext_amp(sdr, 0);
-                sdr_handler->rx_amp(sdr, 20);
-                sdr_handler->rx_att(sdr, 0);
+                sdr_handler->rx_ext_amp(sdr, rx_amp);
+                sdr_handler->rx_amp(sdr, rx_ifgain);
+                sdr_handler->rx_att(sdr, rx_att);
+
                 sdr_handler->rx_start(sdr);
             } else {
                 sdr = sdr_handler->find(KC_908_1);
@@ -165,7 +193,7 @@ class KC908 : public SoapySDR::Device
         void i16_to_f32(const int16_t* in, float* out, int count) {
             // TODO: confirm this logic
             for (int i = 0; i < count; i++) {
-                float new_out = (float)(*in++) * (1.0f / 32768.0f) - 1.f;
+                float new_out = (float)(*in++) / 32768.0f;
 
                 *out++ = new_out;
             }
@@ -206,8 +234,6 @@ class KC908 : public SoapySDR::Device
         {
             std::vector<std::string> results;
 
-            // TODO: Add Attenuator Gain
-            // TODO: Add Amplifier Gain
             results.push_back("IF");
             results.push_back("AMP");
             results.push_back("ATT");
@@ -220,27 +246,65 @@ class KC908 : public SoapySDR::Device
             return false;
         }
 
-        //SoapySDR::RangeList getGainRange(const int direction, const size_t channel)
-        //{
-            //SoapySDR::RangeList results;
+        SoapySDR::Range getGainRange(const int direction, const size_t channel, const std::string &name) const
+        {
+            if(direction == SOAPY_SDR_RX) {
+                if(name == "IF") {
+                    return SoapySDR::Range(rx_ifgain_min, rx_ifgain_max, rx_ifgain_step);
+                }
 
-            //if(direction == SOAPY_SDR_RX) {
-                //results.push_back(SoapySDR::Range(0, 31));
-            //} else {
-                //results.push_back(SoapySDR::Range(0, 89));
-            //}
+                if(name == "AMP") {
+                    return SoapySDR::Range(rx_amp_min, rx_amp_max, rx_amp_step);
+                }
 
-            //return results;
-        //}
+                if(name == "ATT") {
+                    return SoapySDR::Range(rx_att_min, rx_att_max, rx_att_step);
+                }
 
-        //SoapySDR::Range getGainRange(const int direction, const size_t channel, const std::string &name) const
-        //{
-            //if(direction == SOAPY_SDR_RX) {
-                //return SoapySDR::Range(0, 31);
-            //} else {
-                //return SoapySDR::Range(0, 89);
-            //}
-        //}
+                return SoapySDR::Range(0, 31);
+            } else {
+                return SoapySDR::Range(0, 89);
+            }
+        }
+
+        virtual void setGain (
+            const int direction,
+            const size_t channel,
+            const std::string & name,
+            const double value
+        ) {
+            if(direction == SOAPY_SDR_RX) {
+                if(name == "IF") {
+                    rx_ifgain = value;
+                }
+
+                if(name == "AMP") {
+                    rx_amp = value;
+                }
+
+                if(name == "ATT") {
+                    rx_att = value;
+                }
+            }
+
+            if(!running) {
+                return;
+            }
+
+            if(direction == SOAPY_SDR_RX) {
+                if(name == "IF") {
+                    sdr_handler->rx_amp(sdr, value);
+                }
+
+                if(name == "AMP") {
+                    sdr_handler->rx_ext_amp(sdr, value);
+                }
+
+                if(name == "ATT") {
+                    sdr_handler->rx_att(sdr, value);
+                }
+            }
+        }
 
         /*******************************************************************
         * Frequency API
