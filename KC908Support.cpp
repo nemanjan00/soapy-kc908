@@ -378,9 +378,9 @@ SoapySDR::KwargsList findKC908(const SoapySDR::Kwargs &args)
         devInfo["name"] = std::string(sdr->name);
 
         results.push_back(devInfo);
-    }
 
-    sdr_handler->close(sdr);
+        sdr_handler->close(sdr);
+    }
 
     return results;
 }
