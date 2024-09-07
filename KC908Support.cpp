@@ -6,6 +6,8 @@
 #include <inttypes.h>
 #include"kcsdr.h"
 #include <fstream>
+#include <chrono>
+#include <thread>
 
 /***********************************************************************
  * Device interface
@@ -214,6 +216,8 @@ class KC908 : public SoapySDR::Device
             bool ret = false;
 
             do {
+                std::this_thread::sleep_for(std::chrono::nanoseconds(1000000000 / 40000000 * numElems / 4));
+
                 if(!running) {
                     return -1;
                 }
